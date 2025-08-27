@@ -6,8 +6,14 @@ readme = "README.md"
 authors = [
     { name = "alexjuda", email = "alexanderjuda@gmail.com" }
 ]
-requires-python = ">=3.11"
-dependencies = []
+requires-python = ">=3.12"
+dependencies = [
+    "py-trello>=0.20.1",
+    "pydantic-settings>=2.10.1",
+]
+
+[project.scripts]
+rebello = "rebello.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.8.5,<0.9.0"]
@@ -16,4 +22,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
+    "responses>=0.25.8",
+    "ruff>=0.12.10",
+    "ty>=0.0.1a19",
 ]

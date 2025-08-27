@@ -1,10 +1,10 @@
-# Simple kanban
+# [1] Simple kanban
 
-## To Do
+## [2] To Do
 
 * [21] Say hello
 * [22] Say goodnight
 
-## Done
+## [3] Done
 
 * [31] Basic project setup
