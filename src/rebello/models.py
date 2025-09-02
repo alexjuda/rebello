@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 
-
 @dataclass
 class CardNoID:
     name: str
