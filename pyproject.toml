@@ -1,6 +1,7 @@
 [project]
 name = "rebello"
-version = "0.1.0"
+dynamic = ["version"]
+license = "Apache-2.0"
 description = "Editor-driven Markdown interface for Trello"
 readme = "README.md"
 authors = [
@@ -15,9 +16,12 @@ dependencies = [
 [project.scripts]
 rebello = "rebello.cli:main"
 
+[project.urls]
+homepage = "https://github.com/alexjuda/rebello"
+
 [build-system]
-requires = ["uv_build>=0.8.5,<0.9.0"]
-build-backend = "uv_build"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
@@ -26,3 +30,6 @@ dev = [
     "ruff>=0.12.10",
     "ty>=0.0.1a19",
 ]
+
+[tool.hatch.version]
+source = "vcs"
