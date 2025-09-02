@@ -12,7 +12,7 @@ class TestTrelloClient:
     def client(monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("TRELLO_API_KEY", "api-key")
         monkeypatch.setenv("TRELLO_API_SECRET", "api-secret")
-        monkeypatch.setenv("TRELLO_BOARD_ID", "board-id")
+        monkeypatch.setenv("TRELLO_BOARD_ID", "boardid1")
         return TrelloClient.from_env()
 
     @staticmethod
@@ -24,8 +24,8 @@ class TestTrelloClient:
         assert client is not None
         assert client2 is not None
 
-        assert client._client.api_key != client2._client.api_key
-        assert client._client.api_secret != client2._client.api_secret
+        assert client._api_key != client2._api_key
+        assert client._api_secret != client2._api_secret
 
     @staticmethod
     def test_list_boards(client: TrelloClient):
@@ -89,29 +89,77 @@ class TestTrelloClient:
         name = "foo bar"
         list_id = "abc123"
 
-        with (Path(__file__).parent / "trello_responses" / "lists.json").open() as f:
-            list_json = json.load(f)[0]
-
-        with (Path(__file__).parent / "trello_responses" / "board.json").open() as f:
-            board_json = json.load(f)
-
         with (Path(__file__).parent / "trello_responses" / "cards.json").open() as f:
             card_json = json.load(f)[0]
 
         with responses.RequestsMock() as rsps:
-            rsps.add(
-                responses.GET,
-                re.compile(r"https://api.trello.com/1/lists/abc123[^/]+$"),
-                json=list_json,
-            )
-            rsps.add(
-                responses.GET,
-                re.compile(r"https://api.trello.com/1/boards/\w+[^/]+$"),
-                json=board_json,
-            )
-            rsps.add(
-                responses.POST,
+            rsps.post(
                 re.compile(r"https://api.trello.com/1/cards[^/]+$"),
+                match=[
+                    responses.json_params_matcher({"name": name, "idList": list_id})
+                ],
                 json=card_json,
             )
-            client.create_card(name=name, list_id=list_id)
+            card_id = client.create_card(name=name, list_id=list_id)
+
+        assert card_id == "cardid1"
+
+    @staticmethod
+    def test_change_parent(client: TrelloClient):
+        card_id = "cardid1"
+        card_json = {
+            "id": card_id,
+            "name": "trello CLI with editor interface",
+            "idList": "oldlistid",
+        }
+        new_list_id = "newlistid"
+
+        with responses.RequestsMock() as rsps:
+            rsps.add(
+                responses.PUT,
+                re.compile(r"https://api.trello.com/1/cards/cardid1[^/]+$"),
+                match=[responses.json_params_matcher({"idList": new_list_id})],
+                json={**card_json, "idList": new_list_id},
+            )
+
+            client.change_parent(card_id=card_id, new_list_id=new_list_id)
+
+    @staticmethod
+    def test_rename_card(client: TrelloClient):
+        card_id = "cardid1"
+        old_card_json = {
+            "id": card_id,
+            "name": "trello CLI with editor interface",
+            "idList": "oldlistid",
+        }
+        new_name = "new name"
+
+        with responses.RequestsMock() as rsps:
+            rsps.add(
+                responses.PUT,
+                re.compile(r"https://api.trello.com/1/cards/cardid1[^/]+$"),
+                match=[responses.json_params_matcher({"name": new_name})],
+                json={**old_card_json, "name": new_name},
+            )
+
+            client.rename_card(card_id=card_id, new_name=new_name)
+
+    @staticmethod
+    def test_archive_card(client: TrelloClient):
+        card_id = "cardid1"
+        old_card_json = {
+            "id": card_id,
+            "name": "trello CLI with editor interface",
+            "idList": "oldlistid",
+            "closed": False,
+        }
+
+        with responses.RequestsMock() as rsps:
+            rsps.add(
+                responses.PUT,
+                re.compile(r"https://api.trello.com/1/cards/cardid1[^/]+$"),
+                match=[responses.json_params_matcher({"closed": True})],
+                json={**old_card_json, "closed": True},
+            )
+
+            client.archive_card(card_id=card_id)

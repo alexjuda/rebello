@@ -8,8 +8,8 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "py-trello>=0.20.1",
     "pydantic-settings>=2.10.1",
+    "requests>=2.32.5",
 ]
 
 [project.scripts]

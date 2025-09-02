@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import cast
-from trello import TrelloClient as GenericClient, Card as APICard
-from .settings import TrelloSettings
+
+import requests
+
 from .models import Board, CardWithID, List
+from .settings import TrelloSettings
 
 
 @dataclass
@@ -15,61 +17,91 @@ type ListID = str
 
 
 class TrelloClient:
-    def __init__(self, generic_client: GenericClient, board_id: str):
-        self._client = generic_client
+    def __init__(self, board_id: str, api_key: str, api_secret: str):
         self._board_id = board_id
+        self._api_key = api_key
+        self._api_secret = api_secret
+        self._session = requests.Session()
+        self._session.params.update({"key": self._api_key, "token": self._api_secret})
 
     @classmethod
     def from_env(cls) -> "TrelloClient":
         settings = TrelloSettings()  # type: ignore
-        client = GenericClient(
+        return cls(
+            board_id=settings.trello_board_id,
             api_key=settings.trello_api_key,
             api_secret=settings.trello_api_secret,
         )
-        return cls(client, settings.trello_board_id)
 
     def list_boards(self) -> list[BoardShallow]:
-        boards = self._client.list_boards()
-        return [BoardShallow(id=cast(str, b.id), name=b.name) for b in boards]
+        url = "https://api.trello.com/1/members/me/boards"
+        response = self._session.get(url)
+        response.raise_for_status()
+        boards_json = response.json()
+        return [
+            BoardShallow(id=board["id"], name=board["name"]) for board in boards_json
+        ]
 
     def get_board(self) -> Board:
-        api_board = self._client.get_board(board_id=self._board_id)
+        response_board = self._session.get(
+            f"https://api.trello.com/1/boards/{self._board_id}",
+            params={"fields": "name"},
+        )
+        response_board.raise_for_status()
+        board_json = response_board.json()
 
-        api_lists = api_board.open_lists()
-        api_cards = api_board.open_cards()
+        response_lists = self._session.get(
+            f"https://api.trello.com/1/boards/{self._board_id}/lists",
+            params={"fields": "name"},
+        )
+        response_lists.raise_for_status()
+        lists_json = response_lists.json()
 
-        # We need to match cards with lists. It's a many-to-one relationship.
-        grouped_cards: dict[ListID, list[APICard]] = {}
-        for api_card in api_cards:
-            grouped_cards.setdefault(api_card.list_id, []).append(api_card)
+        response_cards = self._session.get(
+            f"https://api.trello.com/1/boards/{self._board_id}/cards",
+            params={"fields": "name,idList"},
+        )
+        response_cards.raise_for_status()
+        cards_json = response_cards.json()
 
-        # We wanna retain the order the we received the lists in.
+        grouped_cards: dict[ListID, list[dict]] = {}
+        for card in cards_json:
+            grouped_cards.setdefault(card["idList"], []).append(card)
+
         lists: list[List] = []
-        for api_list in api_lists:
-            cards_for_this_list = grouped_cards.get(api_list.id, [])
+        for list_ in lists_json:
+            cards_for_this_list = grouped_cards.get(list_["id"], [])
             cards = [
-                CardWithID(id=api_card.id, name=api_card.name)
-                for api_card in cards_for_this_list
+                CardWithID(id=card["id"], name=card["name"])
+                for card in cards_for_this_list
             ]
-            lists.append(List(id=api_list.id, name=api_list.name, cards=cards))
+            lists.append(List(id=list_["id"], name=list_["name"], cards=cards))
 
-        return Board(id=cast(str, api_board.id), name=api_board.name, lists=lists)
+        return Board(
+            id=cast(str, board_json["id"]), name=board_json["name"], lists=lists
+        )
 
     def create_card(self, name: str, list_id: str):
-        a_list = self._client.get_list(list_id)
-        a_list.add_card(name=name)
+        url = "https://api.trello.com/1/cards"
+        response = self._session.post(url, json={"name": name, "idList": list_id})
+        response.raise_for_status()
+        card_json = response.json()
+        return card_json["id"]
 
     def change_parent(self, card_id: str, new_list_id: str):
-        card = self._client.get_card(card_id)
-        card.change_list(new_list_id)
+        url = f"https://api.trello.com/1/cards/{card_id}"
+        response = self._session.put(url, json={"idList": new_list_id})
+        response.raise_for_status()
 
     def rename_card(self, card_id: str, new_name: str):
-        card = self._client.get_card(card_id)
-        card.set_name(new_name)
+        url = f"https://api.trello.com/1/cards/{card_id}"
+        response = self._session.put(url, json={"name": new_name})
+        response.raise_for_status()
 
     def archive_card(self, card_id: str):
-        card = self._client.get_card(card_id)
-        card.set_closed(True)
+        url = f"https://api.trello.com/1/cards/{card_id}"
+        response = self._session.put(url, json={"closed": True})
+        response.raise_for_status()
 
 
 __all__ = ["TrelloClient"]

@@ -29,7 +29,7 @@ def main():
         if isinstance(change, ChangeList):
             print(
                 f"* for [{change.card_id}], "
-                "change parent [{change.src_list_id}] -> [{change.dest_list_id}]"
+                f"change parent [{change.src_list_id}] -> [{change.dest_list_id}]"
             )
             client.change_parent(
                 card_id=change.card_id, new_list_id=change.dest_list_id
@@ -37,7 +37,7 @@ def main():
         elif isinstance(change, RewordCard):
             print(
                 f"* for [{change.card_id}], "
-                "rename [{change.old_name}] -> [{change.new_name}]"
+                f"rename [{change.old_name}] -> [{change.new_name}]"
             )
             client.rename_card(card_id=change.card_id, new_name=change.new_name)
         elif isinstance(change, ArchiveCard):
