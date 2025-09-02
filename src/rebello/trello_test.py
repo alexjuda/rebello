@@ -1,8 +1,11 @@
 import json
-from pathlib import Path
 import re
+from pathlib import Path
+
 import pytest
 import responses
+from responses import matchers
+
 from .trello import TrelloClient
 
 
@@ -72,17 +75,23 @@ class TestTrelloClient:
 
             board = client.get_board()
 
-        assert board.id == "boardid1"
+        assert board.id == "idboard1"
         assert board.name == "Trello Platform Changes"
 
         assert len(board.lists) > 0
         a_list = board.lists[0]
-        assert a_list.id == "list-id"
+        assert a_list.id == "idlist1"
         assert a_list.name == "Things to buy today"
 
         assert len(a_list.cards) > 0
-        assert a_list.cards[0].id == "cardid1"
-        assert a_list.cards[0].name == "trello CLI with editor interface"
+
+        card0 = a_list.cards[0]
+        assert card0.id == "idcard1"
+        assert card0.name == "trello CLI with editor interface"
+
+        card1 = a_list.cards[1]
+        assert card1.id == "idcard2"
+        assert card1.pos > card0.pos
 
     @staticmethod
     def test_create_card(client: TrelloClient):
@@ -95,14 +104,12 @@ class TestTrelloClient:
         with responses.RequestsMock() as rsps:
             rsps.post(
                 re.compile(r"https://api.trello.com/1/cards[^/]+$"),
-                match=[
-                    responses.json_params_matcher({"name": name, "idList": list_id})
-                ],
+                match=[matchers.json_params_matcher({"name": name, "idList": list_id})],
                 json=card_json,
             )
             card_id = client.create_card(name=name, list_id=list_id)
 
-        assert card_id == "cardid1"
+        assert card_id == "idcard2"
 
     @staticmethod
     def test_change_parent(client: TrelloClient):
@@ -118,7 +125,7 @@ class TestTrelloClient:
             rsps.add(
                 responses.PUT,
                 re.compile(r"https://api.trello.com/1/cards/cardid1[^/]+$"),
-                match=[responses.json_params_matcher({"idList": new_list_id})],
+                match=[matchers.json_params_matcher({"idList": new_list_id})],
                 json={**card_json, "idList": new_list_id},
             )
 
@@ -138,7 +145,7 @@ class TestTrelloClient:
             rsps.add(
                 responses.PUT,
                 re.compile(r"https://api.trello.com/1/cards/cardid1[^/]+$"),
-                match=[responses.json_params_matcher({"name": new_name})],
+                match=[matchers.json_params_matcher({"name": new_name})],
                 json={**old_card_json, "name": new_name},
             )
 
@@ -158,7 +165,7 @@ class TestTrelloClient:
             rsps.add(
                 responses.PUT,
                 re.compile(r"https://api.trello.com/1/cards/cardid1[^/]+$"),
-                match=[responses.json_params_matcher({"closed": True})],
+                match=[matchers.json_params_matcher({"closed": True})],
                 json={**old_card_json, "closed": True},
             )
 

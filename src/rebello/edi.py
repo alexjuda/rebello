@@ -2,11 +2,11 @@
 EDI = Editor Driven Interface
 """
 
-from pathlib import Path
 import os
-from contextlib import contextmanager
-from tempfile import NamedTemporaryFile
 import subprocess
+from contextlib import contextmanager
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 
 @contextmanager

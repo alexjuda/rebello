@@ -1,10 +1,10 @@
 from argparse import ArgumentParser
 
+from .diff import find_changeset
+from .edi import open_in_editor, temp_path
+from .md import parse_board, render_board
 from .models import ArchiveCard, ChangeList, CreateCard, RewordCard
 from .trello import TrelloClient
-from .md import render_board, parse_board
-from .edi import open_in_editor, temp_path
-from .diff import find_changeset
 
 
 def main():

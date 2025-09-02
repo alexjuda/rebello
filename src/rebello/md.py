@@ -1,7 +1,7 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
-from .models import Board, List, CardWithID, CardNoID
+from .models import Board, CardNoID, CardWithID, List
 
 
 def render_board(path: Path, board: Board[CardWithID | CardNoID]):

@@ -1,10 +1,10 @@
-import pytest
-from pathlib import Path
 import importlib
+from pathlib import Path
 
+import pytest
+
+from .md import parse_board, render_board
 from .models import Board, CardWithID
-from .md import render_board, parse_board
-
 
 TEST_PKG = "rebello.md_test_files.pairs"
 TEST_DIR = Path(__file__).parent / "md_test_files" / "pairs"

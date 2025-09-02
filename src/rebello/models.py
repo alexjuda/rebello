@@ -9,15 +9,20 @@ from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 
-@dataclass
-class CardWithID:
-    id: str
-    name: str
-
 
 @dataclass
 class CardNoID:
     name: str
+
+
+@dataclass
+class CardWithID(CardNoID):
+    id: str
+
+
+@dataclass
+class CardStored(CardWithID):
+    pos: float
 
 
 T = TypeVar("T", covariant=True)

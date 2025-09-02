@@ -5,6 +5,7 @@ typecheck:
 .PHONY: format
 format:
 	uv run ruff check --fix .
+	ruff check --select I --fix
 	uv run ruff format .
 
 .PHONY: test

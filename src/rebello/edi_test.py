@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import pytest
-from .edi import temp_path, open_in_editor
+
+from .edi import open_in_editor, temp_path
 
 
 class TestTempPath:

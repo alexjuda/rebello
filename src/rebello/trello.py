@@ -3,7 +3,7 @@ from typing import cast
 
 import requests
 
-from .models import Board, CardWithID, List
+from .models import Board, CardStored, CardWithID, List
 from .settings import TrelloSettings
 
 
@@ -42,7 +42,7 @@ class TrelloClient:
             BoardShallow(id=board["id"], name=board["name"]) for board in boards_json
         ]
 
-    def get_board(self) -> Board:
+    def get_board(self) -> Board[CardStored]:
         response_board = self._session.get(
             f"https://api.trello.com/1/boards/{self._board_id}",
             params={"fields": "name"},
@@ -59,7 +59,7 @@ class TrelloClient:
 
         response_cards = self._session.get(
             f"https://api.trello.com/1/boards/{self._board_id}/cards",
-            params={"fields": "name,idList"},
+            params={"fields": "name,idList,pos"},
         )
         response_cards.raise_for_status()
         cards_json = response_cards.json()
@@ -68,13 +68,14 @@ class TrelloClient:
         for card in cards_json:
             grouped_cards.setdefault(card["idList"], []).append(card)
 
-        lists: list[List] = []
+        lists: list[List[CardStored]] = []
         for list_ in lists_json:
             cards_for_this_list = grouped_cards.get(list_["id"], [])
             cards = [
-                CardWithID(id=card["id"], name=card["name"])
+                CardStored(id=card["id"], name=card["name"], pos=card["pos"])
                 for card in cards_for_this_list
             ]
+            cards.sort(key=lambda c: c.pos)
             lists.append(List(id=list_["id"], name=list_["name"], cards=cards))
 
         return Board(

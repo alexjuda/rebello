@@ -1,16 +1,16 @@
-from .diff import find_changeset
 from copy import deepcopy
+
+from .diff import find_changeset
 from .models import (
     ArchiveCard,
     Board,
     CardNoID,
+    CardWithID,
     ChangeList,
     CreateCard,
     List,
-    CardWithID,
     RewordCard,
 )
-
 
 BOARD = Board(
     id="a1",

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Protocol
+
 from .models import (
     ArchiveCard,
     Board,
@@ -76,8 +77,7 @@ def find_changeset(
 
     for a_list in board2.lists:
         for card in a_list.cards:
-            if not isinstance(card, CardNoID):
-                continue
-            changeset.append(CreateCard(list_id=a_list.id, name=card.name))
+            if not isinstance(card, CardWithID):
+                changeset.append(CreateCard(list_id=a_list.id, name=card.name))
 
     return changeset
